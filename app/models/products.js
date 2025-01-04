@@ -12,15 +12,32 @@ const productsSchema = new Schema({
         type: String,
         required: true,
     },
-    description:
-    {
-        type: String,
-        required: false,
-    },
     price:
     {
         type: Number,
         required: true,
+    },
+    pieces:
+    {
+        type: Boolean,
+        required: true,
+    },
+    numberOfPieces:
+    {
+           type: Number,
+            default: 1,
+            validate: {
+              validator: function (value) {
+                if (this.pieces) {
+                  return value >= 1; 
+                }
+                return value === 1; 
+              },}
+    },
+    description:
+    {
+        type: String,
+        required: false,
     },
     image:
     {
@@ -37,7 +54,7 @@ const productsSchema = new Schema({
         type: Number,
         required: true,
         default: 0,
-    },
+    }
 })
-const productsModel = model('selection', productsSchema)
-export default productsModel;
+const products = model('products', productsSchema)
+export default products;
