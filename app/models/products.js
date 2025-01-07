@@ -29,7 +29,7 @@ const productsSchema = new Schema({
             validate: {
               validator: function (value) {
                 if (this.pieces) {
-                  return value >= 1; 
+                  return value >1; 
                 }
                 return value === 1; 
               },}
@@ -56,5 +56,5 @@ const productsSchema = new Schema({
         default: 0,
     }
 })
-const products = model('products', productsSchema)
-export default products;
+const productsModel = model('products', productsSchema)
+export default productsModel;

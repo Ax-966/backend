@@ -2,7 +2,7 @@ import  express  from "express";
 import { configDotenv } from "dotenv";
 import dbConn from "./app/config/db.js";
 import cors from "cors";
- import selectionProducts from './app/router/selectionProducts.js'  
+ import selectionProducts from './app/routes/products.js'  
 
 configDotenv();
 const {
