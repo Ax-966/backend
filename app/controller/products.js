@@ -1,5 +1,6 @@
 import productsModel from "../models/products.js"
 
+
 const filter = (id) => id ? {  id } : {};
 
 export const getAll = (req, res) => { 

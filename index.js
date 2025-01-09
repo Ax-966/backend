@@ -3,6 +3,7 @@ import { configDotenv } from "dotenv";
 import dbConn from "./app/config/db.js";
 import cors from "cors";
  import selectionProducts from './app/routes/products.js'  
+import selectionOrder from "./app/routes/orders.js"; 
 
 configDotenv();
 const {
@@ -22,6 +23,7 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use("/products", selectionProducts)
+ app.use("/orders", selectionOrder) 
 
 app.use(express.static('client'));
 
