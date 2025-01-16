@@ -1,68 +1,30 @@
 import ordersModel from '../models/orders.js';
 import productsModel from '../models/products.js';  
-import { v4 as uuidv4 } from 'uuid';  // id automatico 
 
-export const createOrder = async (req, res) => {
-    try {
-        const { id, products, clientData } = req.body;
-
-        if (!clientData.name || !clientData.phone || !clientData.address || !clientData.email) {
-            return res.status(400).json({ error: 'Datos del cliente incompletos' });
-        }
-         const clientId =  uuidv4();
-
-     
-        const existingOrder = await ordersModel.findOne({ id });
-        if (existingOrder) {
-            return res.status(400).json({ error: 'El pedido con este ID ya existe' });
-        }
-        const productIds = products.map(product => product.productId);
-        const productData = await productsModel.find({ _id: { $in: productIds } });
-
-        // Validar la disponibilidad de stock para cada producto
-        for (const product of products) {
-            const productInfo = productData.find(p => p._id.toString() === product.productId);
-            if (productInfo.stock < product.quantity) {
-                return res.status(400).json({ error: `Stock insuficiente para ${productInfo.name}.` });
-            }
-        }
- 
-
-
-
-        const newOrder = new ordersModel({
-            id,
-            products,
-            clientData: {
-                ...clientData,
-                id: clientId, 
-            },
-        });
-
-        await newOrder.save();
-
-        res.status(201).json({ 
-            message: 'Pedido creado exitosamente', 
-            order: newOrder 
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
 export const confirmOrder = async (req, res) => {
     try {
-        const { id } = req.params;
-        const order = await ordersModel.findOne({ id });
+     
+        const { clientData, products } = req.body;
 
-        if (!order) {
-            return res.status(404).json({ error: 'Pedido no encontrado' });
+        if (!clientData || !products || products.length === 0) {
+            return res.status(400).json({ error: 'Datos del cliente y productos son obligatorios.' });
         }
 
-        if (order.status !== 'pending') {
-            return res.status(400).json({ error: 'El pedido ya fue confirmado o cancelado' });
+        const consolidatedProducts = [];
+        const productMap = new Map();
+
+        for (const product of products) {
+            if (!productMap.has(product.productId)) {
+                productMap.set(product.productId, { ...product, quantity: product.quantity });
+            } else {
+                productMap.get(product.productId).quantity += product.quantity;
+            }
         }
 
-        for (const product of order.products) {
+        productMap.forEach((value) => consolidatedProducts.push(value));
+
+    
+        for (const product of consolidatedProducts) {
             const productData = await productsModel.findById(product.productId);
 
             if (!productData) {
@@ -76,12 +38,21 @@ export const confirmOrder = async (req, res) => {
             
             productData.stock -= product.quantity;
             await productData.save();
+
+ 
+            product.priceAtPurchase = productData.price;
         }
 
-        order.status = 'confirmed';
-        await order.save();
+       
+        const newOrder = new ordersModel({
+            clientData,
+            products: consolidatedProducts,
+        });
 
-        res.json({ message: 'Pedido confirmado', order });
+  
+        await newOrder.save();
+
+        res.status(201).json({ message: 'Pedido confirmado', order: newOrder });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -101,23 +72,6 @@ export const getOrder = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-export const getConfirmedOrders = async (req, res) => {
-    try {
-        console.log("Buscando pedidos con estado 'confirmed'...");
-        const orders = await ordersModel.find({ status: 'confirmed' }).populate('products.productId');
-        console.log("Pedidos encontrados:", orders);
-
-        if (orders.length === 0) {
-            return res.status(404).json({ error: 'No hay pedidos confirmados' });
-        }
-
-        res.json({ message: 'Pedidos confirmados encontrados', orders });
-    } catch (error) {
-        console.error("Error:", error.message);
-        res.status(500).json({ error: error.message });
-    }
-};
-
 export const deleteOrder = async (req, res) => {
     try {
         const { id } = req.params; 
